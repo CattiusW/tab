@@ -823,10 +823,10 @@ engineOptions.forEach(option => {
             const compressed = pako.deflate(settingsArray, { level: 9 });
 
             // Convert the compressed data to a URL-safe Base64 string
-            const urlSafeBase64 = btoa(String.fromCharCode(...compressed)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+            const urlSafeBase64 = await btoa(String.fromCharCode(...compressed)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 
             const baseUrl = window.location.origin + window.location.pathname;
-            const newUrl = `${baseUrl}?settings=${urlSafeBase64}`;
+            const newUrl = await `${baseUrl}?settings=${urlSafeBase64}`;
 
             await navigator.clipboard.writeText(newUrl);
             console.log('Highly compressed settings URL copied to clipboard:', newUrl);
