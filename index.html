@@ -443,7 +443,34 @@
         <button id="add-note-btn">Add New Note</button>
         <div id="notes-container"></div>
     </div>
-    
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const settingsParam = urlParams.get('settings');
+
+        if (settingsParam) {
+            try {
+                const decodedSettings = decodeURIComponent(settingsParam);
+                const settings = JSON.parse(decodedSettings);
+
+                for (const key in settings) {
+                    if (Object.prototype.hasOwnProperty.call(settings, key)) {
+                        localStorage.setItem(key, settings[key]);
+                    }
+                }
+
+                console.log('Settings imported from URL.');
+                
+                const cleanUrl = window.location.origin + window.location.pathname;
+                window.location.replace(cleanUrl);
+
+            } catch (e) {
+                console.error('Error importing settings from URL:', e);
+            }
+        }
+    });
+	</script>
+
     <!-- JavaScript -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -750,50 +777,10 @@ const exportSettingsToUrl = () => {
     window.open(url.toString(), '_blank');
 };
 
-// Function to load settings from the URL
-const loadSettingsFromUrl = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const encodedSettings = urlParams.get('config');
-    if (encodedSettings) {
-        try {
-            const settingsString = atob(encodedSettings); // Base64 decode the string
-            const settings = JSON.parse(settingsString);
-            applySettings(settings);
-            console.log("Loaded settings from URL.");
-        } catch (e) {
-            console.error("Failed to decode or parse URL settings.", e);
-        }
-    } else {
-        // If no URL parameter, fall back to localStorage
-        loadSettings();
-    }
-};
 
 // --- Update Existing Functions and Event Listeners ---
 
 // Update existing loadSettings function
-const loadSettings = () => {
-  // This function is now the fallback and should do less work.
-  // The new `loadSettingsFromUrl` handles the main load logic.
-  const glassBlur = localStorage.getItem('glassBlur');
-  const glassOpacity = localStorage.getItem('glassOpacity');
-  const headerText = localStorage.getItem('headerText');
-  const savedEngine = localStorage.getItem('selectedEngine');
-
-  const settingsFromLocalStorage = {
-    blur: glassBlur,
-    opacity: glassOpacity,
-    header: headerText,
-    engine: savedEngine
-  };
-  applySettings(settingsFromLocalStorage);
-
-  // Load saved background image from local storage
-  const savedImage = localStorage.getItem('userBackground');
-  if(savedImage){
-    document.body.style.backgroundImage = `url(${savedImage})`;
-  }
-};
 
 // Modify the engine selector logic to save the preference
 engineOptions.forEach(option => {
@@ -809,20 +796,37 @@ engineOptions.forEach(option => {
     });
 });
 
-// Add new event listener for the export button
-document.body.getElementId('export-settings-btn').addEventListener('click', exportSettingsToUrl);
 
-
-// Replace the initial loadSettings() call
-// with the new load function that checks the URL first.
-// `loadSettings()` is now a fallback function called inside `loadSettingsFromUrl`.
-// Change this line at the bottom of your script:
-// loadSettings();
-// to:
-loadSettingsFromUrl();
 
     </script>
     <script src="//cdn.jsdelivr.net/npm/eruda"></script>
 <script>eruda.init();</script>
+  <!-- Example button to trigger the export -->
+<button onclick="exportSettingsToUrl()">Export Settings to URL</button>
+
+<script>
+    async function exportSettingsToUrl() {
+        try {
+            const settings = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                settings[key] = localStorage.getItem(key);
+            }
+
+            const settingsJson = JSON.stringify(settings);
+            const encodedSettings = encodeURIComponent(settingsJson);
+            const baseUrl = window.location.origin + window.location.pathname;
+            const newUrl = `${baseUrl}?settings=${encodedSettings}`;
+
+            await navigator.clipboard.writeText(newUrl);
+            console.log('Settings URL copied to clipboard:', newUrl);
+
+        } catch (e) {
+            console.error('Failed to copy URL to clipboard:', e);
+            console.warn('Could not copy to clipboard automatically. The settings URL is:', newUrl);
+        }
+    }
+</script>
+
 </body>
 </html>
