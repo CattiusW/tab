@@ -810,7 +810,7 @@ engineOptions.forEach(option => {
 });
 
 // Add new event listener for the export button
-exportSettingsBtn.addEventListener('click', exportSettingsToUrl);
+document.body.getElementId('exportSettingsBtn').addEventListener('click', exportSettingsToUrl);
 
 // Replace the initial loadSettings() call
 // with the new load function that checks the URL first.
