@@ -449,6 +449,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const settingsParam = urlParams.get('settings');
 
+		
         if (settingsParam) {
             try {
                 // Convert URL-safe Base64 back to a binary array
@@ -804,8 +805,7 @@ engineOptions.forEach(option => {
     </script>
     <script src="//cdn.jsdelivr.net/npm/eruda"></script>
 <script>eruda.init();</script>
-  <!-- Example button to trigger the export -->
-<button onclick="exportSettingsToUrl()">Export Settings to URL (Pako)</button>
+
 
 <script>
     async function exportSettingsToUrl() {
