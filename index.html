@@ -767,15 +767,6 @@ const applySettings = (settings) => {
 // --- URL Parameter Logic ---
 
 // Function to encode settings to a URL parameter
-const exportSettingsToUrl = () => {
-    const settings = getCurrentSettings();
-    const settingsString = JSON.stringify(settings);
-    const encodedSettings = btoa(settingsString); // Base64 encode the string
-    const url = new URL(window.location);
-    url.searchParams.set('config', encodedSettings);
-    // Open a new tab with the URL or alert the user
-    window.open(url.toString(), '_blank');
-};
 
 
 // --- Update Existing Functions and Event Listeners ---
@@ -802,7 +793,6 @@ engineOptions.forEach(option => {
     <script src="//cdn.jsdelivr.net/npm/eruda"></script>
 <script>eruda.init();</script>
   <!-- Example button to trigger the export -->
-<button onclick="exportSettingsToUrl()">Export Settings to URL</button>
 
 <script>
     async function exportSettingsToUrl() {
