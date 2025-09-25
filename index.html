@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search App</title>
+    <!-- Font Awesome CDN for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* Import the Roboto font from Google Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+        /* Global styles */
+        :root {
+            --glass-blur: 10px;
+            --glass-opacity: 0.25;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: #333; /* Fallback color */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: background-image 0.5s ease;
+            position: relative;
+            overflow: hidden; /* Prevent scrollbar on image change */
+            flex-direction: column; /* Center content vertically */
+        }
+
+        /* Customizable blur box effect */
+        .blur-box {
+            background: rgba(255, 255, 255, var(--glass-opacity));
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur)); /* For Safari */
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border-radius: 20px;
+        }
+
+        /* Customizable liquid glass header */
+        #custom-header {
+            position: absolute;
+            top: 15vh;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 3rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            padding: 10px 20px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            /* Liquid glass text effect */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.6) 100%);
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            backdrop-filter: blur(var(--glass-blur));
+        }
+        
+        /* Search container */
+        .search-container {
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            width: 90%;
+            max-width: 600px;
+            padding: 30px;
+            position: relative;
+        }
+
+        /* Recent note display */
+        #recent-note-display {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            margin-top: 10px;
+            font-style: italic;
+            text-align: center;
+            max-width: 500px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: none; /* Hidden by default */
+        }
+        
+        /* Liquid glass search bar */
+        .search-bar {
+            width: 100%;
+            padding: 15px 25px;
+            border-radius: 50px;
+            border: none;
+            outline: none;
+            font-size: 1.2rem;
+            background: rgba(255, 255, 255, var(--glass-opacity)); /* Uses glass effect */
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            box-sizing: border-box;
+            font-weight: 700;
+        }
+
+        .search-bar::placeholder {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Sidebar and selector icons (circular) */
+        .sidebar {
+            position: fixed;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 10px;
+            z-index: 90;
+        }
+
+        .engine-select {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .engine-option {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            color: #333;
+            transition: transform 0.2s ease-in-out, background 0.2s ease-in-out;
+            font-size: 1.2rem;
+        }
+
+        .engine-option:hover {
+            transform: scale(1.1);
+        }
+
+        .engine-option.active {
+            background: #fff;
+            color: #000;
+        }
+
+        /* Bottom-left floating buttons */
+        .floating-buttons {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+        }
+        
+        .floating-buttons .circular-btn {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            font-size: 1.5rem;
+            transition: transform 0.2s ease-in-out, background 0.2s ease-in-out;
+            border: none;
+            outline: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .floating-buttons .circular-btn:hover {
+            transform: scale(1.1);
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .floating-buttons input[type="file"] {
+            display: none;
+        }
+        
+        /* Settings Panel */
+        #settings-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            width: 300px;
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 100;
+        }
+
+        #settings-panel.active {
+            display: flex;
+        }
+
+        #settings-panel h3 {
+            margin: 0;
+            color: white;
+            text-align: center;
+        }
+
+        #settings-panel label {
+            color: white;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+        
+        #settings-panel .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #settings-panel input[type="range"] {
+            width: 70%;
+        }
+
+        #settings-panel input[type="text"] {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.4);
+            border: none;
+            border-radius: 5px;
+            padding: 5px;
+            color: white;
+        }
+
+        #settings-panel button {
+            background: rgba(255, 255, 255, 0.4);
+            border: none;
+            padding: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            color: white;
+            font-weight: 700;
+        }
+        
+        /* Notes Panel */
+        #notes-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            width: 350px;
+            max-height: 80vh;
+            overflow-y: auto;
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 100;
+        }
+
+        #notes-panel.active {
+            display: flex;
+        }
+        
+        #notes-panel h3 {
+            margin: 0;
+            color: white;
+            text-align: center;
+        }
+
+        #notes-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #notes-panel button {
+            background: rgba(255, 255, 255, 0.4);
+            border: none;
+            padding: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            color: white;
+            font-weight: 700;
+        }
+        
+        .note {
+            background: rgba(255, 255, 255, 0.6);
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            color: #333;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 0.9rem;
+            resize: vertical;
+            min-height: 50px;
+        }
+        
+        .note-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        
+        .note-actions button {
+            background: none;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 0.8rem;
+            border-radius: 5px;
+        }
+        
+        .note-actions button:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        /* Mobile specific styles */
+        @media (max-width: 768px) {
+            #custom-header {
+                font-size: 2rem;
+                top: 5vh;
+            }
+            .search-container {
+                width: 95%;
+                padding: 20px;
+            }
+            .sidebar {
+                position: static;
+                transform: none;
+                flex-direction: row;
+                justify-content: center;
+                margin-top: 20px;
+            }
+            .engine-select {
+                flex-direction: row;
+                gap: 5px;
+            }
+            .floating-buttons {
+                flex-direction: row;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                top: auto;
+            }
+            #settings-panel {
+                width: 90%;
+            }
+            #notes-panel {
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Customizable Header -->
+    <div id="custom-header">My Search</div>
+
+    <!-- Main Content -->
+    <div class="search-container">
+        <!-- Search bar -->
+        <input type="text" id="search-input" class="search-bar blur-box" placeholder="Search Google...">
+        <!-- Most recent note display -->
+        <div id="recent-note-display" class="blur-box"></div>
+    </div>
+
+    <!-- Sidebar for search engine selection -->
+    <div class="sidebar">
+        <div id="engine-selector" class="engine-select">
+            <div class="engine-option active" data-engine="google">
+                <i class="fab fa-google"></i>
+            </div>
+            <div class="engine-option" data-engine="wikipedia">
+                <i class="fab fa-wikipedia-w"></i>
+            </div>
+            <div class="engine-option" data-engine="youtube">
+                <i class="fab fa-youtube"></i>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Floating buttons for settings and notes -->
+    <div class="floating-buttons">
+        <!-- Add a new button for the notes panel -->
+        <button id="notes-btn" class="circular-btn" aria-label="Open notes">
+            <i class="fas fa-sticky-note"></i>
+        </button>
+        <!-- Existing settings button -->
+        <button id="settings-btn" class="circular-btn" aria-label="Open settings">
+            <i class="fas fa-cog"></i>
+        </button>
+        <!-- Existing file upload button -->
+        <input type="file" id="background-image-file" accept="image/*">
+        <button id="upload-image-btn" class="circular-btn" aria-label="Upload background image">
+            <i class="fas fa-image"></i>
+        </button>
+    </div>
+
+    <!-- Settings Panel -->
+    <div id="settings-panel" class="blur-box">
+        <h3>Settings</h3>
+        <label>
+            Header Text
+            <input type="text" id="header-text-input">
+        </label>
+        <label>
+            Glass Blur
+            <div class="setting-row">
+                <span>0</span>
+                <input type="range" id="blur-slider" min="0" max="20" value="10">
+                <span>20</span>
+            </div>
+        </label>
+        <label>
+            Glass Opacity
+            <div class="setting-row">
+                <span>0</span>
+                <input type="range" id="opacity-slider" min="0" max="1" step="0.05" value="0.25">
+                <span>1</span>
+            </div>
+        </label>
+        <button id="save-settings">Save</button>
+        <button id="reset-settings">Reset to Default</button>
+    </div>
+
+    <!-- Notes panel -->
+    <div id="notes-panel" class="blur-box">
+        <h3>My Notes</h3>
+        <button id="add-note-btn">Add New Note</button>
+        <div id="notes-container"></div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('search-input');
+            const fileInput = document.getElementById('background-image-file');
+            const engineSelector = document.getElementById('engine-selector');
+            const engineOptions = engineSelector.querySelectorAll('.engine-option');
+            const settingsBtn = document.getElementById('settings-btn');
+            const settingsPanel = document.getElementById('settings-panel');
+            const blurSlider = document.getElementById('blur-slider');
+            const opacitySlider = document.getElementById('opacity-slider');
+            const saveSettingsBtn = document.getElementById('save-settings');
+            const resetSettingsBtn = document.getElementById('reset-settings');
+            const headerTextInput = document.getElementById('header-text-input');
+            const customHeader = document.getElementById('custom-header');
+            const uploadImageBtn = document.getElementById('upload-image-btn');
+            const recentNoteDisplay = document.getElementById('recent-note-display');
+            
+            // New Note variables
+            const notesBtn = document.getElementById('notes-btn');
+            const notesPanel = document.getElementById('notes-panel');
+            const addNoteBtn = document.getElementById('add-note-btn');
+            const notesContainer = document.getElementById('notes-container');
+
+            const engines = {
+                google: { icon: 'fa-google', url: 'https://www.google.com/search?q=' },
+                wikipedia: { icon: 'fa-wikipedia-w', url: 'https://en.wikipedia.org/wiki/Special:Search?search=' },
+                youtube: { icon: 'fa-youtube', url: 'https://www.youtube.com/results?search_query=' },
+            };
+
+            let selectedEngine = 'google';
+
+            const loadSettings = () => {
+                const glassBlur = localStorage.getItem('glassBlur');
+                const glassOpacity = localStorage.getItem('glassOpacity');
+                const headerText = localStorage.getItem('headerText');
+
+                if (glassBlur) {
+                    document.documentElement.style.setProperty('--glass-blur', `${glassBlur}px`);
+                    blurSlider.value = glassBlur;
+                }
+                if (glassOpacity) {
+                    document.documentElement.style.setProperty('--glass-opacity', glassOpacity);
+                    opacitySlider.value = glassOpacity;
+                }
+                if (headerText) {
+                    customHeader.textContent = headerText;
+                    headerTextInput.value = headerText;
+                }
+            };
+
+            const saveSettings = () => {
+                localStorage.setItem('glassBlur', blurSlider.value);
+                localStorage.setItem('glassOpacity', opacitySlider.value);
+                localStorage.setItem('headerText', headerTextInput.value);
+                customHeader.textContent = headerTextInput.value;
+                settingsPanel.classList.remove('active'); // Close panel on save
+            };
+
+            const resetSettings = () => {
+                document.documentElement.style.setProperty('--glass-blur', '10px');
+                document.documentElement.style.setProperty('--glass-opacity', '0.25');
+                blurSlider.value = 10;
+                opacitySlider.value = 0.25;
+                customHeader.textContent = "My Search";
+                headerTextInput.value = "My Search";
+                saveSettings(); // Save defaults
+                localStorage.removeItem('userBackground'); // Also clear background
+                document.body.style.backgroundImage = 'none';
+            };
+
+            const updateGlassEffect = () => {
+                const blurValue = blurSlider.value;
+                const opacityValue = opacitySlider.value;
+                document.documentElement.style.setProperty('--glass-blur', `${blurValue}px`);
+                document.documentElement.style.setProperty('--glass-opacity', opacityValue);
+            };
+
+            const updateRecentNoteDisplay = () => {
+                const savedNotes = JSON.parse(localStorage.getItem('myNotes') || '[]');
+                if (savedNotes.length > 0) {
+                    const lastNote = savedNotes[savedNotes.length - 1];
+                    recentNoteDisplay.textContent = `${lastNote}`;
+                    recentNoteDisplay.style.display = 'block';
+                } else {
+                    recentNoteDisplay.style.display = 'none';
+                }
+            };
+            
+            // Notes functions
+            const saveNotes = () => {
+                const notes = Array.from(notesContainer.querySelectorAll('.note')).map(note => note.value);
+                localStorage.setItem('myNotes', JSON.stringify(notes));
+                updateRecentNoteDisplay(); // Update the recent note display after saving
+            };
+
+            const loadNotes = () => {
+                const savedNotes = JSON.parse(localStorage.getItem('myNotes') || '[]');
+                notesContainer.innerHTML = '';
+                savedNotes.forEach(noteContent => createNoteElement(noteContent));
+                updateRecentNoteDisplay(); // Update the recent note display after loading
+            };
+
+            const createNoteElement = (content = '') => {
+                const noteWrapper = document.createElement('div');
+                const textarea = document.createElement('textarea');
+                textarea.className = 'note';
+                textarea.value = content;
+                textarea.placeholder = 'Write your note here...';
+                
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'note-actions';
+                const deleteBtn = document.createElement('button');
+                deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+
+                noteWrapper.append(textarea, actionsDiv);
+                actionsDiv.appendChild(deleteBtn);
+                notesContainer.appendChild(noteWrapper);
+
+                textarea.addEventListener('input', saveNotes);
+                deleteBtn.addEventListener('click', () => {
+                    noteWrapper.remove();
+                    saveNotes();
+                });
+            };
+
+            // Initial load of settings and notes
+            loadSettings();
+            loadNotes();
+
+            // Load saved background image from local storage
+            const savedImage = localStorage.getItem('userBackground');
+            if (savedImage) {
+                document.body.style.backgroundImage = `url(${savedImage})`;
+            }
+
+            // Bind search on Enter key
+            searchInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    const query = searchInput.value.trim();
+                    if (query) {
+                        const url = engines[selectedEngine].url + encodeURIComponent(query);
+                        window.location.href = url;
+                    }
+                }
+            });
+
+            // Handle file upload for background image
+            fileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const imageDataUrl = e.target.result;
+                        document.body.style.backgroundImage = `url(${imageDataUrl})`;
+                        localStorage.setItem('userBackground', imageDataUrl);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Trigger file input click when the button is clicked
+            uploadImageBtn.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // Handle search engine selection
+            engineOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    engineOptions.forEach(opt => opt.classList.remove('active'));
+                    option.classList.add('active');
+                    selectedEngine = option.getAttribute('data-engine');
+                    searchInput.placeholder = `Search ${selectedEngine.charAt(0).toUpperCase() + selectedEngine.slice(1)}...`;
+                    if (window.innerWidth <= 768) {
+                        engineSelector.classList.add('collapsed');
+                    }
+                });
+            });
+
+            // Settings panel functionality
+            settingsBtn.addEventListener('click', () => {
+                settingsPanel.classList.toggle('active');
+                if(notesPanel.classList.contains('active')) {
+                    notesPanel.classList.remove('active');
+                }
+            });
+            blurSlider.addEventListener('input', updateGlassEffect);
+            opacitySlider.addEventListener('input', updateGlassEffect);
+            saveSettingsBtn.addEventListener('click', saveSettings);
+            resetSettingsBtn.addEventListener('click', resetSettings);
+            headerTextInput.addEventListener('input', () => {
+                customHeader.textContent = headerTextInput.value || "Search";
+            });
+            
+            // Notes panel functionality
+            notesBtn.addEventListener('click', () => {
+                notesPanel.classList.toggle('active');
+                if (notesPanel.classList.contains('active')) {
+                    loadNotes();
+                }
+                if(settingsPanel.classList.contains('active')) {
+                    settingsPanel.classList.remove('active');
+                }
+            });
+
+            addNoteBtn.addEventListener('click', () => {
+                createNoteElement();
+                saveNotes();
+            });
+
+            // Hide panels on outside click
+            document.addEventListener('click', (event) => {
+                const isSidebar = event.target.closest('.sidebar');
+                const isSettingsPanel = event.target.closest('#settings-panel');
+                const isSettingsBtn = event.target.closest('#settings-btn');
+                const isNotesPanel = event.target.closest('#notes-panel');
+                const isNotesBtn = event.target.closest('#notes-btn');
+
+                if (window.innerWidth <= 768 && !isSidebar) {
+                    engineSelector.classList.add('collapsed');
+                }
+                if (!isSettingsPanel && !isSettingsBtn) {
+                    settingsPanel.classList.remove('active');
+                }
+                if (!isNotesPanel && !isNotesBtn) {
+                    notesPanel.classList.remove('active');
+                }
+            });
+
+            // Mobile view initialization and resize listener
+            const updateMobileState = () => {
+                if (window.innerWidth <= 768) {
+                    engineSelector.classList.add('collapsed');
+                } else {
+                    engineSelector.classList.remove('collapsed');
+                }
+            };
+            updateMobileState();
+            window.addEventListener('resize', updateMobileState);
+            
+            engineSelector.addEventListener('click', (event) => {
+                if (window.innerWidth <= 768) {
+                    if (engineSelector.classList.contains('collapsed')) {
+                        engineSelector.classList.remove('collapsed');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
