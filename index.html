@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search App</title>
+    <title>OpenSearch</title>
     <!-- Font Awesome CDN for icons -->
 	<script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
 
@@ -27,6 +27,7 @@
             font-family: 'Roboto', sans-serif;
             background-color: #333; /* Fallback color */
             background-size: cover;
+          	background-image: url('https://media.timeout.com/images/105850549/1024/576/image.webp')
             background-position: center;
             background-repeat: no-repeat;
             transition: background-image 0.5s ease;
@@ -60,11 +61,7 @@
             border-radius: 20px;
             transition: all 0.3s ease;
             /* Liquid glass text effect */
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.6) 100%);
-            -webkit-backdrop-filter: blur(var(--glass-blur));
-            backdrop-filter: blur(var(--glass-blur));
+ 
         }
         
         /* Search container */
@@ -433,9 +430,9 @@
                 <span>1</span>
             </div>
         </label>
-          <button id="export" onclick="exportSettingsToUrl()" class="settings-btn">Export Settings to URL</button>
         <button id="save-settings">Save</button>
         <button id="reset-settings">Reset to Default</button>
+      
     </div>
 
     <!-- Notes panel -->
@@ -448,7 +445,18 @@
     document.addEventListener('DOMContentLoaded', () => {
         const urlParams = new URLSearchParams(window.location.search);
         const settingsParam = urlParams.get('settings');
+        function checkAndReset() {
+            if (localStorage.length === 0) {
+                resetSettings();
+                document.getElementById('message').textContent = 'Default settings have been loaded.';
+            } else {
+                console.log('localStorage is not empty. Loading user settings...');
+                document.getElementById('message').textContent = 'User settings have been loaded.';
+            }
+        }
 
+        // Run the check when the page loads
+        checkAndReset();
 		
         if (settingsParam) {
             try {
@@ -533,6 +541,7 @@
                     customHeader.textContent = headerText;
                     headerTextInput.value = headerText;
                 }
+              
             };
 
             const saveSettings = () => {
@@ -544,15 +553,15 @@
             };
 
             const resetSettings = () => {
-                document.documentElement.style.setProperty('--glass-blur', '10px');
-                document.documentElement.style.setProperty('--glass-opacity', '0.25');
+                document.documentElement.style.setProperty('--glass-blur', '20px');
+                document.documentElement.style.setProperty('--glass-opacity', '0');
                 blurSlider.value = 10;
                 opacitySlider.value = 0.25;
-                customHeader.textContent = "My Search";
-                headerTextInput.value = "My Search";
+                customHeader.textContent ="OpenSearch";
+                headerTextInput.value = "OpenSearch";
                 saveSettings(); // Save defaults
                 localStorage.removeItem('userBackground'); // Also clear background
-                document.body.style.backgroundImage = 'none';
+                document.body.style.backgroundImage = 'url(https://media.timeout.com/images/105850549/1024/576/image.webp)';
             };
 
             const updateGlassEffect = () => {
@@ -618,6 +627,8 @@
             const savedImage = localStorage.getItem('userBackground');
             if (savedImage) {
                 document.body.style.backgroundImage = `url(${savedImage})`;
+            }else{
+            	document.body.style.backgroundImage = `url(https://media.timeout.com/images/105850549/1024/576/image.webp)`;
             }
 
             // Bind search on Enter key
