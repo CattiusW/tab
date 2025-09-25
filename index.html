@@ -432,6 +432,7 @@
                 <span>1</span>
             </div>
         </label>
+          <button id="export-settings-btn" class="settings-btn">Export Settings to URL</button>
         <button id="save-settings">Save</button>
         <button id="reset-settings">Reset to Default</button>
     </div>
@@ -691,6 +692,134 @@
                 }
             });
         });
+        // Add new button to constants
+const exportSettingsBtn = document.getElementById('export-settings-btn');
+const savedImage = localStorage.getItem('userBackground');
+
+// --- Helper Functions for URL Encoding/Decoding ---
+
+// Function to get current settings from the page
+const getCurrentSettings = () => {
+    return {
+        blur: blurSlider.value,
+        opacity: opacitySlider.value,
+        header: headerTextInput.value,
+        engine: selectedEngine,
+        background: localStorage.getItem('userBackground'), // Store the base64 background image
+    };
+};
+
+// Function to apply settings from an object
+const applySettings = (settings) => {
+    if (settings.blur) {
+        document.documentElement.style.setProperty('--glass-blur', `${settings.blur}px`);
+        blurSlider.value = settings.blur;
+    }
+    if (settings.opacity) {
+        document.documentElement.style.setProperty('--glass-opacity', settings.opacity);
+        opacitySlider.value = settings.opacity;
+    }
+    if (settings.header) {
+        customHeader.textContent = settings.header;
+        headerTextInput.value = settings.header;
+    }
+    if (settings.engine) {
+        engineOptions.forEach(opt => opt.classList.remove('active'));
+        const newEngine = document.querySelector(`[data-engine="${settings.engine}"]`);
+        if (newEngine) {
+            newEngine.classList.add('active');
+            selectedEngine = settings.engine;
+            searchInput.placeholder = `Search ${selectedEngine.charAt(0).toUpperCase() + selectedEngine.slice(1)}...`;
+        }
+    }
+    if (settings.background) {
+        document.body.style.backgroundImage = `url(${settings.background})`;
+    }
+};
+
+// --- URL Parameter Logic ---
+
+// Function to encode settings to a URL parameter
+const exportSettingsToUrl = () => {
+    const settings = getCurrentSettings();
+    const settingsString = JSON.stringify(settings);
+    const encodedSettings = btoa(settingsString); // Base64 encode the string
+    const url = new URL(window.location);
+    url.searchParams.set('config', encodedSettings);
+    // Open a new tab with the URL or alert the user
+    window.open(url.toString(), '_blank');
+};
+
+// Function to load settings from the URL
+const loadSettingsFromUrl = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const encodedSettings = urlParams.get('config');
+    if (encodedSettings) {
+        try {
+            const settingsString = atob(encodedSettings); // Base64 decode the string
+            const settings = JSON.parse(settingsString);
+            applySettings(settings);
+            console.log("Loaded settings from URL.");
+        } catch (e) {
+            console.error("Failed to decode or parse URL settings.", e);
+        }
+    } else {
+        // If no URL parameter, fall back to localStorage
+        loadSettings();
+    }
+};
+
+// --- Update Existing Functions and Event Listeners ---
+
+// Update existing loadSettings function
+const loadSettings = () => {
+  // This function is now the fallback and should do less work.
+  // The new `loadSettingsFromUrl` handles the main load logic.
+  const glassBlur = localStorage.getItem('glassBlur');
+  const glassOpacity = localStorage.getItem('glassOpacity');
+  const headerText = localStorage.getItem('headerText');
+  const savedEngine = localStorage.getItem('selectedEngine');
+
+  const settingsFromLocalStorage = {
+    blur: glassBlur,
+    opacity: glassOpacity,
+    header: headerText,
+    engine: savedEngine
+  };
+  applySettings(settingsFromLocalStorage);
+
+  // Load saved background image from local storage
+  const savedImage = localStorage.getItem('userBackground');
+  if(savedImage){
+    document.body.style.backgroundImage = `url(${savedImage})`;
+  }
+};
+
+// Modify the engine selector logic to save the preference
+engineOptions.forEach(option => {
+    option.addEventListener('click', () => {
+        engineOptions.forEach(opt => opt.classList.remove('active'));
+        option.classList.add('active');
+        selectedEngine = option.getAttribute('data-engine');
+        localStorage.setItem('selectedEngine', selectedEngine); // Save the selected engine
+        searchInput.placeholder = `Search ${selectedEngine.charAt(0).toUpperCase() + selectedEngine.slice(1)}...`;
+        if(window.innerWidth <= 768){
+            engineSelector.classList.add('collapsed');
+        }
+    });
+});
+
+// Add new event listener for the export button
+exportSettingsBtn.addEventListener('click', exportSettingsToUrl);
+
+// Replace the initial loadSettings() call
+// with the new load function that checks the URL first.
+// `loadSettings()` is now a fallback function called inside `loadSettingsFromUrl`.
+// Change this line at the bottom of your script:
+// loadSettings();
+// to:
+loadSettingsFromUrl();
+
     </script>
 </body>
 </html>
